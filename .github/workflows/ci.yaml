@@ -13,10 +13,11 @@ env:
 
 jobs:
   checker:
-    name: Cargo clippy
+    name: clippy, fmt, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
       - uses: r7kamura/rust-problem-matchers@v1.4.0
       - name: install alsa and udev
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
