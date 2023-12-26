@@ -10,7 +10,11 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-fn main_menu_ui(mut contexts: EguiContexts, mut app_exit_events: EventWriter<AppExit>) {
+fn main_menu_ui(
+    mut contexts: EguiContexts,
+    mut app_exit_events: EventWriter<AppExit>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     egui::Area::new(egui::Id::from("#MAIN_MENU"))
         .anchor(egui::Align2::CENTER_CENTER, [0.0; 2])
         .show(contexts.ctx_mut(), |ui| {
@@ -32,7 +36,7 @@ fn main_menu_ui(mut contexts: EguiContexts, mut app_exit_events: EventWriter<App
 
                 ui.vertical_centered_justified(|ui| {
                     if ui.button("New game").clicked() {
-                        //
+                        next_state.set(GameState::Playing);
                     }
                     if ui.button("Settings").clicked() {
                         //
