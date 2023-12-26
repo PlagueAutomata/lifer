@@ -99,10 +99,10 @@ fn setup(
 fn update_player_camera(
     mut query: Query<(&mut Transform, &PlayerCamera)>,
     keyboard: Res<Input<KeyCode>>,
-    mouse_button: Res<Input<MouseButton>>,
+    _mouse_button: Res<Input<MouseButton>>,
     time: Res<Time>,
-    mouse_movement: EventReader<MouseMotion>,
-    mouse_wheel: EventReader<MouseWheel>,
+    _mouse_movement: EventReader<MouseMotion>,
+    _mouse_wheel: EventReader<MouseWheel>,
 ) {
     let (mut transform, cam) = query.single_mut();
     let mut diff = Vec3::new(0.0, 0.0, 0.0);
