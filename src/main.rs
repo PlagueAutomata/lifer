@@ -7,7 +7,10 @@ use bevy::{
 use bevy::input::mouse::*;
 
 #[derive(Component)]
-struct PlayerCamera { control_speed: f32, rot_speed: f32 }
+struct PlayerCamera {
+    control_speed: f32,
+    rot_speed: f32,
+}
 
 pub struct PlayerInputPlugin;
 impl Plugin for PlayerInputPlugin {
@@ -72,13 +75,26 @@ fn setup(
     });
 
     // camera
-    commands.spawn((Camera3dBundle {
-        transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    }, PlayerCamera { control_speed: 1000.0, rot_speed: 5.0 }));
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
+        PlayerCamera {
+            control_speed: 1000.0,
+            rot_speed: 5.0,
+        },
+    ));
 }
 
-fn update_player_camera(mut query: Query<(&mut Transform, &PlayerCamera)>, keyboard: Res<Input<KeyCode>>, mouse_button: Res<Input<MouseButton>>, time: Res<Time>, mouse_movement: EventReader<MouseMotion>, mouse_wheel: EventReader<MouseWheel>) {
+fn update_player_camera(
+    mut query: Query<(&mut Transform, &PlayerCamera)>,
+    keyboard: Res<Input<KeyCode>>,
+    _mouse_button: Res<Input<MouseButton>>,
+    time: Res<Time>,
+    _mouse_movement: EventReader<MouseMotion>,
+    _mouse_wheel: EventReader<MouseWheel>,
+) {
     let (mut transform, cam) = query.single_mut();
     let mut diff = Vec3::new(0.0, 0.0, 0.0);
     if keyboard.pressed(KeyCode::D) {
@@ -96,7 +112,7 @@ fn update_player_camera(mut query: Query<(&mut Transform, &PlayerCamera)>, keybo
     let fwd = -Vec3::new(transform.local_z().x, 0.0, transform.local_z().z);
     let right = Vec3::new(transform.local_z().z, 0.0, -transform.local_z().x);
     diff = right * diff.x + fwd * diff.z;
-    transform.translation = transform.translation + diff.normalize_or_zero() * time.delta_seconds() * cam.control_speed;
+    transform.translation += diff.normalize_or_zero() * time.delta_seconds() * cam.control_speed;
 
     let mut rot = 0.0;
     if keyboard.pressed(KeyCode::E) {
