@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  checker:
+    name: Cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: r7kamura/rust-problem-matchers@v1.1.0
+      - name: clippy
+        run: cargo clippy --all --all-targets
+      - name: fmt
+        run: cargo fmt --all -- --check
+      - name: build
+        run: cargo build --verbose
