@@ -24,3 +24,4 @@ default = []
 bevy = { version = "0.12.1", features = [
     "wayland",
 ] }
+bevy_egui = "0.24"

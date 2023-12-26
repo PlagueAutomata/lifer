@@ -6,6 +6,10 @@ use bevy::{
 
 use bevy::input::mouse::*;
 
+mod game_state;
+mod main_menu;
+mod splash_screen;
+
 #[derive(Component)]
 struct PlayerCamera {
     control_speed: f32,
@@ -22,6 +26,8 @@ impl Plugin for PlayerInputPlugin {
 fn main() {
     let mut app = App::new();
 
+    app.add_state::<crate::game_state::GameState>();
+
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -35,6 +41,9 @@ fn main() {
         LogDiagnosticsPlugin::default(),
         FrameTimeDiagnosticsPlugin,
         PlayerInputPlugin,
+        bevy_egui::EguiPlugin,
+        crate::splash_screen::SplashScreenPlugin,
+        crate::main_menu::MainMenuPlugin,
     ));
 
     app.add_systems(Startup, setup);
@@ -81,7 +90,7 @@ fn setup(
             ..default()
         },
         PlayerCamera {
-            control_speed: 1000.0,
+            control_speed: 10.0,
             rot_speed: 5.0,
         },
     ));
