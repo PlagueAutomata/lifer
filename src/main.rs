@@ -96,7 +96,7 @@ fn update_player_camera(mut query: Query<(&mut Transform, &PlayerCamera)>, keybo
     let fwd = -Vec3::new(transform.local_z().x, 0.0, transform.local_z().z);
     let right = Vec3::new(transform.local_z().z, 0.0, -transform.local_z().x);
     diff = right * diff.x + fwd * diff.z;
-    transform.translation = transform.translation + diff * time.delta_seconds() * cam.control_speed;
+    transform.translation = transform.translation + diff.normalize_or_zero() * time.delta_seconds() * cam.control_speed;
 
     let mut rot = 0.0;
     if keyboard.pressed(KeyCode::E) {
