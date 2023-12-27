@@ -4,8 +4,10 @@ use bevy::{
     window::PresentMode,
 };
 
+use crate::character::SpawnCharacter;
 use bevy::input::mouse::*;
 
+mod character;
 mod game_state;
 mod main_menu;
 mod raycast;
@@ -45,6 +47,7 @@ fn main() {
         bevy_egui::EguiPlugin,
         crate::splash_screen::SplashScreenPlugin,
         crate::main_menu::MainMenuPlugin,
+        crate::character::CharacterPlugin,
         crate::raycast::RaycastPlugin,
     ));
 
@@ -57,6 +60,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut spawner: EventWriter<SpawnCharacter>,
 ) {
     // circular base
     commands.spawn(PbrBundle {
@@ -67,10 +71,16 @@ fn setup(
     });
 
     // cube
-    commands.spawn(PbrBundle {
+    let cube = commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
         material: materials.add(Color::rgb_u8(124, 144, 255).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..default()
+    });
+
+    spawner.send(SpawnCharacter {
+        transform: Transform::from_translation(Vec3::new(20.0, 0.0, 30.0)),
+        target: Some(cube.id()),
         ..default()
     });
 
