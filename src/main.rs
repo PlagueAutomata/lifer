@@ -8,6 +8,7 @@ use bevy::input::mouse::*;
 
 mod game_state;
 mod main_menu;
+mod raycast;
 mod splash_screen;
 
 #[derive(Component)]
@@ -44,6 +45,7 @@ fn main() {
         bevy_egui::EguiPlugin,
         crate::splash_screen::SplashScreenPlugin,
         crate::main_menu::MainMenuPlugin,
+        crate::raycast::RaycastPlugin,
     ));
 
     app.add_systems(Startup, setup);
@@ -93,6 +95,7 @@ fn setup(
             control_speed: 10.0,
             rot_speed: 5.0,
         },
+        crate::raycast::PlaneRaycast::Y,
     ));
 }
 
