@@ -1,4 +1,4 @@
-use crate::game_state::GameState;
+use crate::{game_state::GameState, selectable::Selectable};
 use bevy::prelude::*;
 
 pub struct CharacterPlugin;
@@ -14,6 +14,11 @@ impl Plugin for CharacterPlugin {
                     .run_if(in_state(GameState::Playing)),
             );
     }
+}
+
+#[derive(Component)]
+pub struct CharacterData {
+    pub faction: i32,
 }
 
 #[derive(Component)]
@@ -99,6 +104,12 @@ pub fn spawner_system(
                 target: None,
                 velocity: Vec3::ZERO,
                 speed: 3.0,
+            },
+            CharacterData {
+                faction: -1,
+            },
+            Selectable {
+
             },
         ));
 

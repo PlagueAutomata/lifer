@@ -4,10 +4,13 @@ use bevy::{
     window::PresentMode,
 };
 
-use crate::character::SpawnCharacter;
+use crate::raycast::PlaneRaycast;
+use crate::character::{SpawnCharacter, CharacterData};
+use crate::selectable::{Selectable, CurrentlySelected};
 use bevy::input::mouse::*;
 
 mod character;
+mod selectable;
 mod game_state;
 mod main_menu;
 mod raycast;
@@ -22,7 +25,7 @@ struct PlayerCamera {
 pub struct PlayerInputPlugin;
 impl Plugin for PlayerInputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_player_camera);
+        app.add_systems(Update, (update_player_camera, object_select));
     }
 }
 
@@ -62,6 +65,8 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut spawner: EventWriter<SpawnCharacter>,
 ) {
+    commands.init_resource::<CurrentlySelected>();
+
     // circular base
     commands.spawn(PbrBundle {
         mesh: meshes.add(shape::Circle::new(4.0).into()),
@@ -107,6 +112,25 @@ fn setup(
         },
         crate::raycast::PlaneRaycast::Y,
     ));
+}
+
+fn object_select(mut commands: Commands, mut query: Query<(&Camera, &PlaneRaycast)>, selectables: Query<(&GlobalTransform, &Selectable, Entity)>, mbtn: Res<Input<MouseButton>>, mut sel: ResMut<CurrentlySelected>) {
+    if !mbtn.just_pressed(MouseButton::Left) { return; }
+
+    let (cam, raycast) = query.single_mut();
+    let pos = match raycast.result {
+        Some(p) => p,
+        None => return,
+    };
+
+    let control_distance = 2.0;
+
+    for p in selectables.iter() {
+        if (p.0.translation() - pos).length() < control_distance {
+            sel.sel = p.2;
+            println!("Selected entity with id = {}", p.2.index());
+        }
+    }
 }
 
 fn update_player_camera(
