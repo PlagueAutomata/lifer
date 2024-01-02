@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
-pub struct Selectable {
-
-}
+pub struct Selectable {}
 
 #[derive(Resource)]
 pub struct CurrentlySelected {

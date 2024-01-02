@@ -4,16 +4,16 @@ use bevy::{
     window::PresentMode,
 };
 
+use crate::character::{CharacterData, SpawnCharacter};
 use crate::raycast::PlaneRaycast;
-use crate::character::{SpawnCharacter, CharacterData};
-use crate::selectable::{Selectable, CurrentlySelected};
+use crate::selectable::{CurrentlySelected, Selectable};
 use bevy::input::mouse::*;
 
 mod character;
-mod selectable;
 mod game_state;
 mod main_menu;
 mod raycast;
+mod selectable;
 mod splash_screen;
 
 #[derive(Component)]
@@ -114,8 +114,16 @@ fn setup(
     ));
 }
 
-fn object_select(mut commands: Commands, mut query: Query<(&Camera, &PlaneRaycast)>, selectables: Query<(&GlobalTransform, &Selectable, Entity)>, mbtn: Res<Input<MouseButton>>, mut sel: ResMut<CurrentlySelected>) {
-    if !mbtn.just_pressed(MouseButton::Left) { return; }
+fn object_select(
+    mut commands: Commands,
+    mut query: Query<(&Camera, &PlaneRaycast)>,
+    selectables: Query<(&GlobalTransform, &Selectable, Entity)>,
+    mbtn: Res<Input<MouseButton>>,
+    mut sel: ResMut<CurrentlySelected>,
+) {
+    if !mbtn.just_pressed(MouseButton::Left) {
+        return;
+    }
 
     let (cam, raycast) = query.single_mut();
     let pos = match raycast.result {

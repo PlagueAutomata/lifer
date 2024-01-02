@@ -105,12 +105,8 @@ pub fn spawner_system(
                 velocity: Vec3::ZERO,
                 speed: 3.0,
             },
-            CharacterData {
-                faction: -1,
-            },
-            Selectable {
-
-            },
+            CharacterData { faction: -1 },
+            Selectable {},
         ));
 
         if let Some(target) = target {
