@@ -4,7 +4,7 @@ use bevy::{
     window::PresentMode,
 };
 
-use crate::character::{CharacterData, SpawnCharacter};
+use crate::character::SpawnCharacter;
 use crate::raycast::PlaneRaycast;
 use crate::selectable::{CurrentlySelected, Selectable};
 use bevy::input::mouse::*;
@@ -54,6 +54,7 @@ fn main() {
         crate::raycast::RaycastPlugin,
     ));
 
+    app.init_resource::<CurrentlySelected>();
     app.add_systems(Startup, setup);
 
     app.run();
@@ -65,8 +66,6 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut spawner: EventWriter<SpawnCharacter>,
 ) {
-    commands.init_resource::<CurrentlySelected>();
-
     // circular base
     commands.spawn(PbrBundle {
         mesh: meshes.add(shape::Circle::new(4.0).into()),
@@ -115,8 +114,7 @@ fn setup(
 }
 
 fn object_select(
-    mut commands: Commands,
-    mut query: Query<(&Camera, &PlaneRaycast)>,
+    mut query: Query<&PlaneRaycast, With<Camera>>,
     selectables: Query<(&GlobalTransform, &Selectable, Entity)>,
     mbtn: Res<Input<MouseButton>>,
     mut sel: ResMut<CurrentlySelected>,
@@ -125,11 +123,8 @@ fn object_select(
         return;
     }
 
-    let (cam, raycast) = query.single_mut();
-    let pos = match raycast.result {
-        Some(p) => p,
-        None => return,
-    };
+    let raycast = query.single_mut();
+    let Some(pos) = raycast.result else { return };
 
     let control_distance = 2.0;
 

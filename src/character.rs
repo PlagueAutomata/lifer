@@ -17,11 +17,6 @@ impl Plugin for CharacterPlugin {
 }
 
 #[derive(Component)]
-pub struct CharacterData {
-    pub faction: i32,
-}
-
-#[derive(Component)]
 pub struct CharacterController {
     pub target: Option<Vec3>,
     pub velocity: Vec3,
@@ -105,7 +100,6 @@ pub fn spawner_system(
                 velocity: Vec3::ZERO,
                 speed: 3.0,
             },
-            CharacterData { faction: -1 },
             Selectable {},
         ));
 
