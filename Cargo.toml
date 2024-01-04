@@ -20,6 +20,9 @@ lto = "thin"
 [features]
 default = []
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.5.4"
+
 [dependencies]
 bevy = { version = "0.12.1", features = [
     "wayland",
