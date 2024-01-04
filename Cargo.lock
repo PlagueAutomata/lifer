@@ -1102,6 +1102,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "big-brain"
+version = "0.18.0"
+source = "git+https://github.com/PlagueAutomata/big-brain?rev=aed238e#aed238e65625a22816441351f9755854db661365"
+dependencies = [
+ "bevy",
+ "big-brain-derive",
+]
+
+[[package]]
+name = "big-brain-derive"
+version = "0.18.0"
+source = "git+https://github.com/PlagueAutomata/big-brain?rev=aed238e#aed238e65625a22816441351f9755854db661365"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.43",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.69.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2357,6 +2376,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_egui",
+ "big-brain",
 ]
 
 [[package]]

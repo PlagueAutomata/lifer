@@ -1,64 +1,59 @@
+use crate::mechanics::*;
 use crate::{game_state::GameState, selectable::Selectable};
 use bevy::prelude::*;
+use big_brain::prelude::*;
+
+mod inventory;
+mod movement;
+
+pub use self::{
+    inventory::Inventory,
+    movement::{CachedFinder, FindAndMove},
+};
+
+pub const DEFAULT_COLOR: Color = Color::BLACK;
+pub const SLEEP_COLOR: Color = Color::BLUE;
+pub const FARM_COLOR: Color = Color::YELLOW;
 
 pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnCharacter>()
+        app.add_plugins((BigBrainPlugin::new(PreUpdate),))
+            .add_event::<SpawnCharacter>()
             .add_systems(PreUpdate, spawner_system)
             .add_systems(
                 Update,
-                (read_target_position, move_character)
-                    .chain()
-                    .run_if(in_state(GameState::Playing)),
+                sync_character_color.run_if(in_state(GameState::Playing)),
             );
     }
 }
 
 #[derive(Component)]
 pub struct CharacterController {
-    pub target: Option<Vec3>,
-    pub velocity: Vec3,
     pub speed: f32,
+    pub color: Color,
+    pub is_sleeping: bool,
 }
 
-#[derive(Component)]
-pub struct MovementTarget(pub Entity);
-
-pub fn read_target_position(
-    transforms: TransformHelper,
-    mut query: Query<(&mut CharacterController, &MovementTarget)>,
+pub fn sync_character_color(
+    query: Query<(&CharacterController, &Children)>,
+    material_query: Query<&Handle<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (mut ctrl, &MovementTarget(target)) in query.iter_mut() {
-        ctrl.target = transforms
-            .compute_global_transform(target)
-            .map(|transform| transform.translation())
-            .ok();
-    }
-}
-
-pub fn move_character(
-    time: Res<Time>,
-    mut query: Query<(&mut CharacterController, &mut Transform), Without<Parent>>,
-) {
-    for (mut ctrl, mut transform) in query.iter_mut() {
-        ctrl.velocity = match ctrl.target {
-            Some(target) => (target - transform.translation).normalize_or_zero() * ctrl.speed,
-            None => Vec3::ZERO,
-        };
-        transform.translation += ctrl.velocity * time.delta_seconds();
-
-        if ctrl.velocity.length() > 0.0 {
-            // TODO: remove pitch/roll
-            *transform = transform.looking_to(ctrl.velocity, Vec3::Y);
+    for (ctrl, children) in &query {
+        let child = children.first();
+        let material_id = child.and_then(|&entity| material_query.get(entity).ok());
+        let material = material_id.and_then(|id| materials.get_mut(id));
+        if let Some(material) = material {
+            material.base_color = ctrl.color;
         }
     }
 }
+
 #[derive(Event, Default)]
 pub struct SpawnCharacter {
     pub transform: Transform,
-    pub target: Option<Entity>,
     pub model: CharacterModel,
 }
 
@@ -84,28 +79,40 @@ pub fn spawner_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for SpawnCharacter {
-        transform,
-        target,
-        model,
-    } in events.drain()
-    {
+    for SpawnCharacter { transform, model } in events.drain() {
         let mut entity = commands.spawn((
             SpatialBundle {
                 transform,
                 ..default()
             },
-            CharacterController {
-                target: None,
-                velocity: Vec3::ZERO,
-                speed: 3.0,
-            },
             Selectable {},
+            CharacterController {
+                speed: 5.0,
+                color: DEFAULT_COLOR,
+                is_sleeping: false,
+            },
+            Fatigue {
+                current: 0.0,
+                change: 8.0,
+            },
+            Inventory {
+                money: 0,
+                items: 0.0,
+            },
+            Thinker::first_to_score(0.6)
+                .when(
+                    FatigueScorer::default(),
+                    Sequence::step((FindAndMove::<House>::new(0.1), Sleep::new(10.0, 30.0))),
+                )
+                .when(
+                    WorkNeedScorer,
+                    Sequence::step((FindAndMove::<Field>::new(0.1), Farm::new(10.0, 30.0))),
+                )
+                .when(
+                    SellNeedScorer,
+                    Sequence::step((FindAndMove::<Market>::new(0.1), Sell)),
+                ),
         ));
-
-        if let Some(target) = target {
-            entity.insert(MovementTarget(target));
-        }
 
         entity.with_children(|builder| {
             let capsule = shape::Capsule {
@@ -117,7 +124,11 @@ pub fn spawner_system(
             builder.spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(capsule)),
                 material: materials.add(Color::YELLOW.into()),
-                transform: Transform::from_translation(Vec3::new(0.0, model.height / 2.0, 0.0)),
+                transform: Transform::from_translation(Vec3::new(
+                    0.0,
+                    model.height / 2.0 + model.radius,
+                    0.0,
+                )),
                 ..default()
             });
 
@@ -130,7 +141,7 @@ pub fn spawner_system(
                 material: materials.add(Color::RED.into()),
                 transform: Transform::from_translation(Vec3::new(
                     0.0,
-                    model.height - model.face_height / 2.0,
+                    model.height - model.face_height / 2.0 + model.radius,
                     -model.radius,
                 )),
                 ..default()
