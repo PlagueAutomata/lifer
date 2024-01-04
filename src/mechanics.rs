@@ -1,10 +1,12 @@
 mod field;
 mod house;
+mod item;
 mod market;
 
 pub use self::{
     field::{Farm, Field, WorkNeedScorer},
     house::{Fatigue, FatigueScorer, House, Sleep},
+    item::{Item, ItemAsset, ItemAssetLoader, ItemAssetLoaderError, ItemSpawnError},
     market::{Market, Sell, SellNeedScorer},
 };
 
@@ -22,6 +24,7 @@ impl Plugin for MechanicsPlugin {
         app.add_plugins((
             self::field::FieldPlugin,
             self::house::HousePlugin,
+            self::item::ItemPlugin,
             self::market::MarketPlugin,
         ))
         .add_systems(OnEnter(GameState::Playing), spawn_scene)
