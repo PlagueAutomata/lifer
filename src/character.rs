@@ -1,4 +1,4 @@
-use crate::game_state::GameState;
+use crate::{game_state::GameState, selectable::Selectable};
 use crate::mechanics::*;
 use bevy::prelude::*;
 use big_brain::prelude::*;
@@ -85,6 +85,7 @@ pub fn spawner_system(
                 transform,
                 ..default()
             },
+            Selectable {},
             CharacterController {
                 speed: 5.0,
                 color: DEFAULT_COLOR,
