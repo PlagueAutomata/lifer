@@ -45,7 +45,7 @@ impl<T: Component + Clone> FindAndMove<T> {
                     transform.translation += delta.normalize_or_zero() * step;
                     transform.look_to(delta, Vec3::Y);
                 } else {
-                    debug!("We came to {:?}", std::any::type_name::<T>());
+                    debug!("Reached {:?}", std::any::type_name::<T>());
                     action.success()
                 }
             }
