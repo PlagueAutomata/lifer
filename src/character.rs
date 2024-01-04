@@ -1,4 +1,4 @@
-use crate::game_state::GameState;
+use crate::{game_state::GameState, selectable::Selectable};
 use bevy::prelude::*;
 
 pub struct CharacterPlugin;
@@ -100,6 +100,7 @@ pub fn spawner_system(
                 velocity: Vec3::ZERO,
                 speed: 3.0,
             },
+            Selectable {},
         ));
 
         if let Some(target) = target {
