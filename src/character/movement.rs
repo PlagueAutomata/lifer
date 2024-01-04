@@ -41,8 +41,6 @@ impl<T: Component + Clone> FindAndMove<T> {
                 trace!("Distance to {:?}: {}", std::any::type_name::<T>(), distance);
 
                 if distance > move_to.radius {
-                    trace!("Stepping closer.");
-
                     let step = (ctrl.speed * time.delta_seconds()).min(distance);
                     transform.translation += delta.normalize_or_zero() * step;
                     transform.look_to(delta, Vec3::Y);
