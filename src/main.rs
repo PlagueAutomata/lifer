@@ -16,6 +16,10 @@ mod raycast;
 mod selectable;
 mod splash_screen;
 
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 #[derive(Component)]
 struct PlayerCamera {
     control_speed: f32,
