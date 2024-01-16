@@ -2245,6 +2245,7 @@ dependencies = [
  "bevy_app",
  "bevy_ecs",
  "bevy_utils",
+]
 
 [[package]]
 name = "jemalloc-sys"
@@ -2439,10 +2440,10 @@ dependencies = [
  "bevy_egui",
  "big-brain",
  "iyes_progress",
+ "jemallocator",
  "rand",
  "ron",
  "serde",
- "jemallocator",
 ]
 
 [[package]]
