@@ -1,7 +1,7 @@
-mod field;
-mod house;
-mod item;
-mod market;
+pub mod field;
+pub mod house;
+pub mod item;
+pub mod market;
 
 pub use self::{
     field::{Farm, Field, WorkNeedScorer},
@@ -10,7 +10,7 @@ pub use self::{
     market::{Market, Sell, SellNeedScorer},
 };
 
-use crate::game_state::GameState;
+use crate::{game_state::GameState, loading::AssetCache};
 use bevy::prelude::*;
 
 pub const FIELD_COLOR: Color = Color::YELLOW;
@@ -33,6 +33,7 @@ impl Plugin for MechanicsPlugin {
 }
 
 pub fn spawn_scene(
+    mut cache: ResMut<AssetCache>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -43,7 +44,7 @@ pub fn spawn_scene(
     // farm field
     commands.spawn(Field).insert(PbrBundle {
         mesh: model.clone(),
-        material: materials.add(FIELD_COLOR.into()),
+        material: cache.get_material(&mut materials, FIELD_COLOR),
         transform: rotation.with_translation(Vec3::new(-5.0, 0.0, 0.0)),
         ..default()
     });
@@ -51,7 +52,7 @@ pub fn spawn_scene(
     // sleeping house
     commands.spawn(House).insert(PbrBundle {
         mesh: model.clone(),
-        material: materials.add(HOUSE_COLOR.into()),
+        material: cache.get_material(&mut materials, HOUSE_COLOR),
         transform: rotation.with_translation(Vec3::new(5.0, 0.0, -5.0)),
         ..default()
     });
@@ -59,7 +60,7 @@ pub fn spawn_scene(
     // marketplace
     commands.spawn(Market).insert(PbrBundle {
         mesh: model,
-        material: materials.add(MARKET_COLOR.into()),
+        material: cache.get_material(&mut materials, MARKET_COLOR),
         transform: rotation.with_translation(Vec3::new(0.0, 0.0, 5.0)),
         ..default()
     });

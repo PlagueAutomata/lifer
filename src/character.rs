@@ -1,11 +1,13 @@
+use crate::loading::AssetCache;
 use crate::mechanics::*;
-use crate::{game_state::GameState, selectable::Selectable};
+use crate::{game_state::GameState, loading::ItemDatabase};
 use bevy::prelude::*;
 use big_brain::prelude::*;
 
 mod inventory;
 mod movement;
 
+use self::item::ContainerBundle;
 pub use self::{
     inventory::Inventory,
     movement::{CachedFinder, FindAndMove},
@@ -19,13 +21,20 @@ pub struct CharacterPlugin;
 
 impl Plugin for CharacterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((BigBrainPlugin::new(PreUpdate),))
-            .add_event::<SpawnCharacter>()
-            .add_systems(PreUpdate, spawner_system)
-            .add_systems(
-                Update,
-                sync_character_color.run_if(in_state(GameState::Playing)),
-            );
+        app.add_plugins((
+            BigBrainPlugin::new(PreUpdate),
+            self::inventory::InventoryPlugin,
+        ))
+        .init_resource::<AssetCache>()
+        .add_event::<SpawnCharacter>()
+        .add_systems(
+            PreUpdate,
+            spawner_system.run_if(in_state(GameState::Playing)),
+        )
+        .add_systems(
+            Update,
+            sync_character_color.run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
@@ -37,30 +46,44 @@ pub struct CharacterController {
 }
 
 pub fn sync_character_color(
+    mut cache: ResMut<AssetCache>,
     query: Query<(&CharacterController, &Children)>,
-    material_query: Query<&Handle<StandardMaterial>>,
+    mut material_query: Query<&mut Handle<StandardMaterial>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for (ctrl, children) in &query {
-        let child = children.first();
-        let material_id = child.and_then(|&entity| material_query.get(entity).ok());
-        let material = material_id.and_then(|id| materials.get_mut(id));
-        if let Some(material) = material {
-            material.base_color = ctrl.color;
+        let mut handle = children
+            .first()
+            .and_then(|&entity| material_query.get_mut(entity).ok());
+
+        if let Some(dst) = handle.as_deref_mut() {
+            *dst = cache.get_material(&mut materials, ctrl.color);
         }
     }
 }
 
 #[derive(Event, Default)]
 pub struct SpawnCharacter {
+    pub player: bool,
     pub transform: Transform,
     pub model: CharacterModel,
 }
 
+#[derive(Clone, Copy, PartialEq)]
 pub struct CharacterModel {
     pub height: f32,
     pub radius: f32,
     pub face_height: f32,
+}
+
+impl std::cmp::Eq for CharacterModel {}
+
+impl std::hash::Hash for CharacterModel {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.height.to_bits().hash(state);
+        self.radius.to_bits().hash(state);
+        self.face_height.to_bits().hash(state);
+    }
 }
 
 impl Default for CharacterModel {
@@ -73,57 +96,82 @@ impl Default for CharacterModel {
     }
 }
 
+#[derive(Component, Clone, ActionSpawn)]
+pub struct Idle;
+
+#[derive(Clone)]
+pub struct ModelCacheEntry {
+    pub capsule: Handle<Mesh>,
+    pub cube: Handle<Mesh>,
+}
+
 pub fn spawner_system(
+    mut cache: ResMut<AssetCache>,
     mut commands: Commands,
     mut events: ResMut<Events<SpawnCharacter>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    items: Res<ItemDatabase>,
 ) {
-    for SpawnCharacter { transform, model } in events.drain() {
+    use rand::rngs::SmallRng;
+    use rand::{Rng, SeedableRng};
+    let mut rng = SmallRng::from_entropy();
+
+    for SpawnCharacter {
+        player,
+        transform,
+        model,
+    } in events.drain()
+    {
+        let mut container_entity = commands.spawn(ContainerBundle::default());
+        let container = container_entity.id();
+
+        if player {
+            container_entity.with_children(|builder| {
+                let sphere = shape::Icosphere {
+                    radius: 0.3,
+                    subdivisions: 3,
+                };
+                builder.spawn((
+                    items.potion.clone(),
+                    PbrBundle {
+                        mesh: meshes.add(sphere.try_into().unwrap()),
+                        material: cache.get_material(&mut materials, Color::RED),
+                        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+                        ..default()
+                    },
+                ));
+            });
+        }
+
         let mut entity = commands.spawn((
             SpatialBundle {
                 transform,
                 ..default()
             },
-            Selectable {},
             CharacterController {
                 speed: 5.0,
                 color: DEFAULT_COLOR,
                 is_sleeping: false,
             },
             Fatigue {
-                current: 0.0,
+                current: rng.gen_range(0.0..=100.0),
                 change: 8.0,
             },
-            Inventory {
-                money: 0,
-                items: 0.0,
-            },
-            Thinker::first_to_score(0.6)
-                .when(
-                    FatigueScorer::default(),
-                    Sequence::step((FindAndMove::<House>::new(0.1), Sleep::new(10.0, 30.0))),
-                )
-                .when(
-                    WorkNeedScorer,
-                    Sequence::step((FindAndMove::<Field>::new(0.1), Farm::new(10.0, 30.0))),
-                )
-                .when(
-                    SellNeedScorer,
-                    Sequence::step((FindAndMove::<Market>::new(0.1), Sell)),
-                ),
+            Inventory { container },
+            create_thinker(),
         ));
 
+        if player {
+            entity.insert(crate::player::Player);
+        }
+
         entity.with_children(|builder| {
-            let capsule = shape::Capsule {
-                depth: model.height,
-                radius: model.radius,
-                ..default()
-            };
+            let ModelCacheEntry { capsule, cube } = cache.get_model(&mut meshes, model);
 
             builder.spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(capsule)),
-                material: materials.add(Color::YELLOW.into()),
+                mesh: capsule.clone(),
+                material: cache.get_material(&mut materials, Color::YELLOW),
                 transform: Transform::from_translation(Vec3::new(
                     0.0,
                     model.height / 2.0 + model.radius,
@@ -133,12 +181,8 @@ pub fn spawner_system(
             });
 
             builder.spawn(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Box::new(
-                    model.radius * 2.0,
-                    model.face_height,
-                    model.radius,
-                ))),
-                material: materials.add(Color::RED.into()),
+                mesh: cube.clone(),
+                material: cache.get_material(&mut materials, Color::RED),
                 transform: Transform::from_translation(Vec3::new(
                     0.0,
                     model.height - model.face_height / 2.0 + model.radius,
@@ -147,5 +191,24 @@ pub fn spawner_system(
                 ..default()
             });
         });
+
+        entity.add_child(container);
     }
+}
+
+fn create_thinker() -> ThinkerBuilder {
+    Thinker::highest()
+        .when(
+            FatigueScorer::default(),
+            Sequence::step((FindAndMove::<House>::new(0.1), Sleep::new(10.0, 30.0))),
+        )
+        .when(
+            WorkNeedScorer,
+            Sequence::step((FindAndMove::<Field>::new(0.1), Farm::new(30.0))),
+        )
+        .when(
+            SellNeedScorer,
+            Sequence::step((FindAndMove::<Market>::new(0.1), Sell)),
+        )
+        .otherwise(Idle)
 }

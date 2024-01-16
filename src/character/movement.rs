@@ -21,7 +21,7 @@ impl<T: Component + Clone> FindAndMove<T> {
     }
 
     pub fn system(
-        time: Res<Time>,
+        time: Res<Time<Virtual>>,
         query: Query<(Entity, &Transform), With<T>>,
         mut actors: Query<(&mut Transform, &CharacterController), Without<T>>,
         mut actions: Query<(ActionQuery, &mut Self)>,

@@ -33,7 +33,7 @@ pub fn spawn_items_system(
                 error!("spawning entities err: {:?}", err);
             }
 
-            warn!("load item for {:?}", entity_id);
+            debug!("load item for {:?}", entity_id);
         }
     });
 }
@@ -66,7 +66,10 @@ fn spawn_item(
             }
         })?;
 
-        component.apply_or_insert(&mut entity, &**reflect);
+        // do not overwrite
+        if !component.contains(EntityRef::from(&entity)) {
+            component.insert(&mut entity, &**reflect);
+        }
     }
 
     Ok(())

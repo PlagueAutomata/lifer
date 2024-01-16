@@ -22,7 +22,7 @@ fn splash_enter(mut commands: Commands, mut contexts: EguiContexts, assets: Res<
     commands.insert_resource(SplashState {
         // bevy.png just for now
         logo: contexts.add_image(assets.load("bevy.png")),
-        timer: Timer::from_seconds(4.0, TimerMode::Once),
+        timer: Timer::from_seconds(2.0, TimerMode::Once),
     });
 }
 
@@ -38,8 +38,7 @@ fn splash_ui(
     mut state: ResMut<SplashState>,
 ) {
     if state.timer.tick(time.delta()).finished() {
-        // TODO: use GameState::Loading
-        game_state.set(GameState::MainMenu);
+        game_state.set(GameState::Loading);
         return;
     }
 

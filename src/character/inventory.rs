@@ -1,11 +1,14 @@
 use bevy::prelude::*;
 
-#[derive(Component, Reflect)]
-pub struct Inventory {
-    pub money: u32,
-    pub items: f32,
+pub struct InventoryPlugin;
+
+impl Plugin for InventoryPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_type::<Inventory>();
+    }
 }
 
-impl Inventory {
-    pub const MAX_ITEMS: f32 = 20.0;
+#[derive(Component, Reflect)]
+pub struct Inventory {
+    pub container: Entity,
 }
