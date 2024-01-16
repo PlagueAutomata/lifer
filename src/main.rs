@@ -16,6 +16,10 @@ pub mod player;
 pub mod raycast;
 pub mod splash_screen;
 
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 fn main() {
     let mut app = App::new();
 
