@@ -30,7 +30,7 @@ pub struct Fatigue {
     pub current: f32,
 }
 
-pub fn fatigue_system(time: Res<Time>, mut parameters: Query<&mut Fatigue>) {
+pub fn fatigue_system(time: Res<Time<Virtual>>, mut parameters: Query<&mut Fatigue>) {
     for mut param in &mut parameters {
         param.current = (param.current + param.change * time.delta_seconds()).clamp(0.0, 100.0);
     }
@@ -49,7 +49,7 @@ impl Sleep {
 }
 
 pub fn sleep_action(
-    time: Res<Time>,
+    time: Res<Time<Virtual>>,
     mut actors: Query<(&mut Fatigue, &mut CharacterController)>,
     mut query: Query<(ActionQuery, &Sleep)>,
 ) {
@@ -102,11 +102,8 @@ pub fn fatigue_scorer(
             } else {
                 scorer.last_score.take();
                 score.set(new_score);
-                if fatigue.current >= 80.0 {
-                    trace!(
-                        "Fatigue above threshold! Score: {}",
-                        fatigue.current / 100.0
-                    )
+                if new_score >= 0.8 {
+                    trace!("Fatigue above threshold! Score: {}", new_score)
                 }
             }
         }

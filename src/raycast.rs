@@ -8,12 +8,7 @@ pub struct RaycastPlugin;
 
 impl Plugin for RaycastPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            plane_raycast
-                .after(crate::update_player_camera)
-                .run_if(in_state(GameState::Playing)),
-        );
+        app.add_systems(Update, plane_raycast.run_if(in_state(GameState::Playing)));
 
         #[cfg(debug_assertions)]
         {
@@ -38,7 +33,7 @@ impl PlaneRaycast {
     };
 }
 
-fn plane_raycast(
+pub fn plane_raycast(
     windows: Query<&Window>,
     mut camera: Query<(Entity, &mut PlaneRaycast, &Camera)>,
     transform: TransformHelper,
